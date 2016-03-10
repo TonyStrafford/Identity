@@ -4,6 +4,11 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using System.Security.Principal;
+using System.Threading.Tasks;
+using Identity.Infrastructure;
+using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.Owin;
+using Identity.Models;
 
 namespace Identity.Controllers
 {
@@ -30,6 +35,39 @@ namespace Identity.Controllers
             dict.Add("Auth Type", HttpContext.User.Identity.AuthenticationType);
             dict.Add("In Users Role", HttpContext.User.IsInRole("Users"));
             return dict;
+        }
+
+        [Authorize]
+        public ActionResult UserProps()
+        {
+            return View(CurrentUser);
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<ActionResult> UserProps(Cities city)
+        {
+            AppUser user = CurrentUser;
+            user.City = city;
+            user.SetCountryFromCity(city);
+            await UserManager.UpdateAsync(user);
+            return View(user);
+        }
+
+        private AppUser CurrentUser
+        {
+            get
+            {
+                return UserManager.FindByName(HttpContext.User.Identity.Name);
+            }
+        }
+
+        private AppUserManager UserManager
+        {
+            get
+            {
+                return HttpContext.GetOwinContext().GetUserManager<AppUserManager>();
+            }
         }
     }
 }
